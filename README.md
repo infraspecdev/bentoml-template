@@ -24,7 +24,7 @@ To use this template, clone the repository and customize it according to your mo
 2. **Customize the template:**
 
    - Update `config.ini` to download the correct models from your S3 bucket.
-   - Update 'validations.py` to change the input validation for your model.
+   - Update `validations.py` to change the input validation for your model.
    - Update `service.py` to use your model.
    - Update `bentofile.yaml` If you have changed the service name in `service.py`.
 
