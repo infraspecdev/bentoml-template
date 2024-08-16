@@ -1,0 +1,12 @@
+service: "service:IrisClassifierService"
+labels:
+  owner: bentoml-team
+  project: sample
+include:
+  - "*.py"
+  - "models/**"
+python:
+  requirements_txt: requirements.txt
+envs:
+  - name: BENTOML_PORT
+    value: 8080
