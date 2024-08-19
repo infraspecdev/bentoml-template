@@ -1,3 +1,5 @@
+# service.py
+
 from __future__ import annotations
 
 import os
@@ -5,14 +7,21 @@ import pickle
 import logging
 import numpy as np
 import bentoml
+import warnings
+from http import HTTPStatus
 
 from middlewares.log_parameters import SetLogDefaultParameters
 from middlewares.request_response_handler import RequestResponseHandler
 from middlewares.validation_handler import ValidationHandler
 from middlewares.validate_jwt import JWTAuthentication
 from middlewares.update_response_headers import UpdateResponseHeaders
-from utils.structure_logging.logger_config import configure_structure_logging
+from utils.structure_logging.logger_config import configure_structure_logging, logger
 from utils.common.validations import IrisRequestParams
+from utils.monitoring.prometheus_metrics import (
+    bentoml_service_model_inferencing_duration_seconds,
+)
+
+warnings.filterwarnings("ignore")
 
 # Configure logging
 configure_structure_logging()
@@ -40,7 +49,7 @@ class IrisClassifierService:
         self.model = bentoml.picklable_model.load_model("iris_knn_model:latest")
 
     @bentoml.api(route="/api/v1/predict", input_spec=IrisRequestParams)
-    def predict(self, **request_parameters: dict):
+    def predict(self, ctx: bentoml.Context, **request_parameters: dict):
         """
         Predict the class of an iris flower based on input parameters.
 
@@ -58,10 +67,17 @@ class IrisClassifierService:
                 return {"message": "Missing one or more required parameters"}
 
             data_array = np.array([values], dtype=np.float32)
-            prediction = self.model.predict(data_array)
+            with bentoml_service_model_inferencing_duration_seconds.labels(
+                endpoint="/api/v1/predict", service_name="IrisClassifierService"
+            ).time():
+                prediction = self.model.predict(data_array)
 
             return {"prediction": prediction.tolist()[0]}
         except Exception:
+            ctx.response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+            logger.exception(
+                "Internal Server Error", status_code=ctx.response.status_code
+            )
             return {"message": "Internal Server Error"}
 
 
