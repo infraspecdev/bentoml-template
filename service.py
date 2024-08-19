@@ -9,6 +9,7 @@ import bentoml
 from middlewares.log_parameters import SetLogDefaultParameters
 from middlewares.request_response_handler import RequestResponseHandler
 from middlewares.validation_handler import ValidationHandler
+from middlewares.validate_jwt import JWTAuthentication
 from utils.structure_logging.logger_config import configure_structure_logging
 from utils.common.validations import IrisRequestParams
 
@@ -66,3 +67,4 @@ class IrisClassifierService:
 IrisClassifierService.add_asgi_middleware(SetLogDefaultParameters)
 IrisClassifierService.add_asgi_middleware(RequestResponseHandler)
 IrisClassifierService.add_asgi_middleware(ValidationHandler)
+IrisClassifierService.add_asgi_middleware(JWTAuthentication)
