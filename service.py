@@ -8,13 +8,16 @@ import bentoml
 
 from middlewares.log_parameters import SetLogDefaultParameters
 from middlewares.request_response_handler import RequestResponseHandler
-from utils.structure_logging.logger_config import logger, configure_structure_logging
+from middlewares.validation_handler import ValidationHandler
+from utils.structure_logging.logger_config import configure_structure_logging
 from utils.common.validations import IrisRequestParams
 
+# Configure logging
 configure_structure_logging()
 bento_logger = logging.getLogger("bentoml")
 bento_logger.setLevel(os.getenv("LOG_LEVEL", "WARNING").upper())
 
+# Load the model
 with open("./models/iris.pickle", "rb") as model_file:
     model = pickle.load(model_file)
 
@@ -23,11 +26,28 @@ bentoml.picklable_model.save_model("iris_knn_model", model)
 
 @bentoml.service
 class IrisClassifierService:
+    """
+    Service for classifying iris flowers using a k-nearest neighbors (KNN) model.
+
+    This service exposes an API endpoint `/api/v1/predict` that takes input parameters for
+    sepal length, sepal width, petal length, and petal width, and returns a prediction
+    from the pre-trained KNN model.
+    """
+
     def __init__(self) -> None:
         self.model = bentoml.picklable_model.load_model("iris_knn_model:latest")
 
     @bentoml.api(route="/api/v1/predict", input_spec=IrisRequestParams)
     def predict(self, **request_parameters: dict):
+        """
+        Predict the class of an iris flower based on input parameters.
+
+        Parameters:
+            request_parameters (dict): A dictionary containing input parameters for prediction.
+
+        Returns:
+            dict: A dictionary containing the prediction or an error message.
+        """
         try:
             params = ["sepal_length", "sepal_width", "petal_length", "petal_width"]
             values = [request_parameters.get(param) for param in params]
@@ -45,3 +65,4 @@ class IrisClassifierService:
 
 IrisClassifierService.add_asgi_middleware(SetLogDefaultParameters)
 IrisClassifierService.add_asgi_middleware(RequestResponseHandler)
+IrisClassifierService.add_asgi_middleware(ValidationHandler)
