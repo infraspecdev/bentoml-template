@@ -1,0 +1,35 @@
+name: Test
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+    push:
+      branches:
+        - main
+    pull_request:
+      branches:
+        - main
+
+jobs:
+  pytest:
+    name: PyTest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+
+      - name: Add short sha in env
+        run: echo "CI_COMMIT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
+
+      - name: Install required libraries
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Run pytest
+        run: pytest
