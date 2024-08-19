@@ -16,5 +16,5 @@ def generate_token() -> str:
 
 
 if __name__ == "__main__":
-    generated_token = generate_token()
-    print(f"Generated JWT Token: {generated_token}")
+    GENERATED_TOKEN = generate_token()
+    print(f"Generated JWT Token: {GENERATED_TOKEN}")
