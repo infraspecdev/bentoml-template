@@ -1,6 +1,6 @@
 service: "service:IrisClassifierService"
 docker:
-  base_image: python:3.9.19-bullseye
+  distro: alpine
 labels:
   owner: bentoml-team
   project: sample
