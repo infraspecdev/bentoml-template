@@ -25,9 +25,6 @@ jobs:
         with:
           python-version: 3.12.3
 
-      - name: Add short sha in env
-        run: echo "CI_COMMIT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
-
       - name: Install required libraries
         run: pip install --no-cache-dir -r requirements.txt
 
