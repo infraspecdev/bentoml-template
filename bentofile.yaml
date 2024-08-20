@@ -1,4 +1,6 @@
 service: "service:IrisClassifierService"
+docker:
+  base_image: python:3.9.19-bullseye
 labels:
   owner: bentoml-team
   project: sample
@@ -6,7 +8,8 @@ include:
   - "*.py"
   - "models/**"
 python:
-  requirements_txt: requirements.txt
+  requirements_txt: "requirements.txt"
+  lock_packages: false
 envs:
   - name: BENTOML_PORT
-    value: 8080
+    value: 3000
