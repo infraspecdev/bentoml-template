@@ -1,0 +1,12 @@
+[
+  {
+    "song": "song-1",
+    "artist": "artist-1",
+    "publisher": "publisher-1"
+  },
+  {
+    "song": "song-2",
+    "artist": "artist-2",
+    "publisher": "publisher-2"
+  }
+]

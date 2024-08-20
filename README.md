@@ -218,3 +218,7 @@ date | base64 | base64
 ## Monitoring
 
 [Prometheus Metrics](utils/monitoring/README.md#prometheus-metrics)
+
+## DynamoDB Setup
+
+[Local DynamoDB Setup with Python](utils/dynamodb/README.md)
