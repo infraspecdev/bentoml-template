@@ -38,6 +38,12 @@ To use this template, clone the repository and customize it according to your mo
    ```bash
    pip install -r requirements.txt
    ```
+
+   **Note:** If you want to use iris model run the following command to store the model in `/models`
+   ```base
+   python train_and_save_model.py
+   ```
+   
 5. **Run these commands to start the service:**
 
    ```bash
