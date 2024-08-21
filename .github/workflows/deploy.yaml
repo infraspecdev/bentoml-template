@@ -1,0 +1,96 @@
+name: Deploy Model API Service
+run-name: Deploy Model| ${{ github.event.inputs.environment }}
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment Environment"
+        type: choice
+        options:
+          - staging
+          - production
+        required: true
+        default: staging
+
+jobs:
+  deploy:
+    name: Model Deployment
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+
+      - name: Add short sha in env
+        run: echo "CI_COMMIT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ vars.TASK_DEFINITION_NAME }} --query taskDefinition > task-definition.json
+
+      - name: Get old task definition revision
+        id: old-task-revision
+        run: |
+          revision=$(aws ecs describe-services \
+            --cluster ${{ vars.ECS_CLUSTER_ARN }} \
+            --services ${{ vars.ECS_SERVICE_ARN }} \
+            --output json | jq -r '.services[] | select(.serviceArn == "${{ vars.ECS_SERVICE_ARN }}") | .taskDefinition | split(":")[-1]')
+          echo "revision=$revision" >> $GITHUB_OUTPUT
+
+      - name: Update image in task definition
+        id: updated-task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ vars.ECS_CONTAINER_NAME }}
+          image: ${{ vars.ECR_REGISTRY_URI }}:${{ env.CI_COMMIT_SHA }}
+
+      - name: Deploy ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.updated-task-definition.outputs.task-definition }}
+          service: ${{ vars.ECS_SERVICE_ARN }}
+          cluster: ${{ vars.ECS_CLUSTER_ARN }}
+          wait-for-service-stability: true
+
+      - name: Download newly deployed task definition
+        id: download-new-task-definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ vars.TASK_DEFINITION_NAME }} --query taskDefinition > new-task-definition.json
+          echo "revision=$(cat new-task-definition.json | jq .revision)" >> $GITHUB_OUTPUT
+
+      - name: Get new task definition revision
+        id: new-task-revision
+        run: |
+          revision=$(aws ecs describe-services \
+            --cluster ${{ vars.ECS_CLUSTER_ARN }} \
+            --services ${{ vars.ECS_SERVICE_ARN }} \
+            --output json | jq -r '.services[] | select(.serviceArn == "${{ vars.ECS_SERVICE_ARN }}") | .taskDefinition | split(":")[-1]')
+          echo "revision=$revision" >> $GITHUB_OUTPUT
+
+      - name: Check Deployment
+        run: |
+          if [[ ${{ steps.download-new-task-definition.outputs.revision }} != ${{ steps.new-task-revision.outputs.revision }} ]]; then
+            echo "Error deploying the current build. Rolling back to previous."
+            aws ecs deregister-task-definition --task-definition ${{ vars.TASK_DEFINITION_NAME }}:${{ steps.download-new-task-definition.outputs.revision }}
+            exit 1
+          fi
+
+      - name: Add tags to task-definition
+        run: |
+          export ECS_TASK_ARN=${{ vars.ECS_TASK_ARN_PREFIX }}:${{ steps.new-task-revision.outputs.revision }}
+          aws ecs tag-resource --resource-arn $ECS_TASK_ARN --tags key=ManagedBy,value=Terraform key=ENV,value=${{ vars.ENVIRONMENT }}
+
+      - name: De-register previous revision
+        run: aws ecs deregister-task-definition --task-definition ${{ vars.TASK_DEFINITION_NAME }}:${{ steps.old-task-revision.outputs.revision }}

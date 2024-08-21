@@ -1,0 +1,55 @@
+name: Build And Push To ECR
+
+permissions:
+  id-token: write
+  contents: read
+
+on: workflow_dispatch
+
+jobs:
+  build_and_push:
+    name: Build And Push To ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12.3
+
+      - name: Add short sha in env
+        run: echo "CI_COMMIT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
+
+      - name: Install required libraries
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Download models
+        run: python download_models.py
+
+      - name: Build BentoML service
+        run: bentoml build
+
+      - name: Clean package cache
+        run: sudo apt-get -y clean
+
+      - name: Run docker prune
+        run: docker system prune --all --volumes --force
+
+      - name: Containerize BentoML service
+        run: bentoml containerize -t $CI_COMMIT_SHA summarization
+
+      - name: Push image to ECR registry
+        run: |
+          docker tag $CI_COMMIT_SHA ${{ vars.ECR_REGISTRY_URI }}:$CI_COMMIT_SHA
+          docker push ${{ vars.ECR_REGISTRY_URI }}:$CI_COMMIT_SHA
