@@ -47,7 +47,7 @@ jobs:
         run: docker system prune --all --volumes --force
 
       - name: Containerize BentoML service
-        run: bentoml containerize -t $CI_COMMIT_SHA summarization
+        run: bentoml containerize -t $CI_COMMIT_SHA iris_classifier_service
 
       - name: Push image to ECR registry
         run: |

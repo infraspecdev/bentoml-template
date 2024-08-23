@@ -43,7 +43,7 @@ To use this template, clone the repository and customize it according to your mo
    ```base
    python train_and_save_model.py
    ```
-   
+
 5. **Run these commands to start the service:**
 
    ```bash
@@ -62,12 +62,12 @@ To use this template, clone the repository and customize it according to your mo
 2. **Build the image:**
 
    ```bash
-   bentoml containerize summarization:<BUILD_VERSION>
+   bentoml containerize iris_classifier_service:<BUILD_VERSION>
    ```
 3. **Run the container:**
 
    ```bash
-   docker run --rm -p 8080:8080 summarization:<BUILD_VERSION>
+   docker run --rm -p 8080:8080 iris_classifier_service:<BUILD_VERSION>
    ```
 
 The build version will be provided as the output of the `bentoml build` command. This will look something similar
@@ -201,7 +201,7 @@ curl -X 'POST' \
 }'
 ```
 
-Replace ` <BENTOML_PORT>` and `<JWT_TOKEN>` with their values. Change `api/v1/summarize` and the request body with the new service route and new body if updated.
+Replace ` <BENTOML_PORT>` and `<JWT_TOKEN>` with their values. Change `api/v1/predict` and the request body with the new service route and new body if updated.
 **To generate the JWT token:**
 
 ```bash
@@ -228,3 +228,9 @@ date | base64 | base64
 ## DynamoDB Setup
 
 [Local DynamoDB Setup with Python](utils/dynamodb/README.md)
+
+## CI/CD Setup
+
+1. [Build Container Image](docs/github_workflows/build.md)
+2. [Deploy to staging/production](docs/github_workflows/deploy.md)
+3. [Test](docs/github_workflows/test.md)
