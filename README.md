@@ -211,7 +211,7 @@ Replace ` <BENTOML_PORT>` and `<JWT_TOKEN>` with their values. Change `api/v1/pr
 You can change the token expiry and secret by changing the environment variables `JWT_EXPIRATION_MINUTES`
 and `JWT_SECRET` in the `.env` file.
 
-* [ ] You can run this in your terminal to generate a `JWT_SECRET`.
+You can run this in your terminal to generate a `JWT_SECRET`.
 
 ```bash
 date | base64 | base64
