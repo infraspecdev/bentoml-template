@@ -129,8 +129,10 @@ with open("./models/<YOUR_MODEL_FILE_NAME>", "rb") as model_file:
 class WeatherPrediciton
 ```
 
-    You will need to update the class name in the`bentofile.yaml` also,
-    ``yaml     service: "service:WeatherPrediciton"     ``
+You will need to update the class name in the`bentofile.yaml` also,
+```yaml     
+service: "service:WeatherPrediciton"
+```
 
 3. **Modify the API Route:** Update the API route to match the model's endpoint.
 
